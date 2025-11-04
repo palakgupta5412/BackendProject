@@ -68,21 +68,25 @@ userSchema.methods.isPasswordMatch = async function(password){
 }
 
 userSchema.methods.generateAccessToken = function(){
-    jwt.sign({
+    // The access token created has three parts encoded in it: header, payload and signature
+    // Here , we are creating payload part of the token , these details can be extracted from the token later
+    // signature and header are created automatically by the jwt.sign method
+    return jwt.sign({
         _id : this._id,
         username : this.username,
         email : this.email,
         fullName : this.fullName
     },
+    // Secret key to sign the token , should be kept in env variables
     process.env.ACCESS_TOKEN_SECRET,
-    {
+    {   
+        // Expiry time of the token
         expiresIn : process.env.ACCESS_TOKEN_EXPIRY
-    }
-)
+    })
 }
 
 userSchema.methods.generateRefreshToken = function(){
-    jwt.sign(
+    return jwt.sign(
         {
             _id : this._id,
         },

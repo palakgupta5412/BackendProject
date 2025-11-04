@@ -23,4 +23,11 @@ app.use(express.static("public"));
 
 //to allow cookies to be sent from frontend to backend
 app.use(cookieParser());
+
+//Routes : 
+
+//Routes are imported here and used with app.use
+import userRouter from "./routes/user.route.js";
+app.use('/api/v1/users' , userRouter);   //localhost:8000/api/v1/users  , main route for user related routes , userRoute will handle subroutes like /register , /login etc jo bhi uss file mein defined honge 
+
 export {app};
