@@ -1,7 +1,9 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-
+import userRouter from "../src/routes/user.router.js";
+import dotenv from "dotenv";
+dotenv.config();
 //to get all powers of express in app variable
 const app = express();
 
@@ -27,7 +29,5 @@ app.use(cookieParser());
 //Routes : 
 
 //Routes are imported here and used with app.use
-import userRouter from "./routes/user.route.js";
 app.use('/api/v1/users' , userRouter);   //localhost:8000/api/v1/users  , main route for user related routes , userRoute will handle subroutes like /register , /login etc jo bhi uss file mein defined honge 
-
 export {app};

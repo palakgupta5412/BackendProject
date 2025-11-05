@@ -1,5 +1,5 @@
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 const userSchema = new mongoose.Schema({
@@ -51,12 +51,12 @@ const userSchema = new mongoose.Schema({
 // For example, hashing password before saving
 // Dont use arrow function here to access 'this' because arrow functions do not bind 'this'
 
-userSchema.pre('save', function(next){
+userSchema.pre('save', async function(next){
     
     // Check if password is modified or not , if not modified we move further since this pre hook will be called on every save
     if(!this.isModified('password')) return next();
     // Hash the password using bcrypt
-    this.password = bcrypt.hash(this.password, 10);
+    this.password = await bcrypt.hash(this.password, 10);
     next();
 })
 
