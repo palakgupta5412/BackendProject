@@ -1,7 +1,10 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from '../utils/ApiError.js' ;
+import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
+
+
 const registerUser = asyncHandler( async (req,res)=>{
     
     // Steps to register a user 
@@ -38,8 +41,12 @@ const registerUser = asyncHandler( async (req,res)=>{
     }
 
     //Step 4 : Check if files are present in req.files (added by multer middleware)
-    const localAvatarFile = req.files?.avatar[0]?.path ;
-    const localCoverImageFile = req.files?.coverImage[0]?.path ;
+    const localAvatarFile = await req.files?.avatar[0]?.path ;
+    // const localCoverImageFile = await req.files?.coverImage[0]?.path ;
+    if(req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0){
+        var localCoverImageFile = req.files.coverImage[0].path ;
+    }
+
 
     //This syntax is for optional chaining , if req.files is undefined it will not throw error 
     //Its like first we check req.files is defined or not , if defined then we access avatar property of it and its 0 index , if avatar[0] is defined then we access its path property 

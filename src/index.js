@@ -5,7 +5,7 @@ import express from "express";
 // const app = express();
 import { app } from "./app.js";
 
-dotenv.config();
+dotenv.config( { path : './.env'});
 await connectDB()
 .then(() => {
     app.listen(process.env.PORT || 5000 , ()=>{
