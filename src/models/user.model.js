@@ -63,7 +63,7 @@ userSchema.pre('save', async function(next){
 //In user Schemas we can add methods to compare password during login
 // userSchema ke andar methods add kr skte , isPasswordMatch and generateAccessToken are name of fns we are adding to schema 
 
-userSchema.methods.isPasswordMatch = async function(password){
+userSchema.methods.isPasswordValid = async function(password){
     return await bcrypt.compare(password, this.password);
 }
 
