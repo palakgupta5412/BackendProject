@@ -232,4 +232,124 @@ const refreshAccessToken = asyncHandler( async (req,res)=>{
     }
 });
 
-export {registerUser , loginUser , logoutUser , refreshAccessToken};
+const changePassword = asyncHandler(async (req, res)=>{
+
+    const {oldPassword , newPassword} = req.body ;
+
+    if(!oldPassword || !newPassword){
+        throw new ApiError(400 , "Old password and new password are required");
+    }
+
+    // Here also we dont have  direct access to user details therefore , we will use 
+    // the same approach of using the refreshToken from cookies to fetch the user details
+    // and adding user to req so that can be easilty accessed in req.user 
+    // and this we have done in auth.middleware.js so we just need to use this middleware
+    // before this fn
+
+    const user = User.findById(req.user?._id);
+
+    // we need to match the oldPasssword in db with the one in req.body
+    const isPasswordValid = await user.isPasswordValid(oldPassword);
+    if(!isPasswordValid){
+        throw new ApiError(401 , "Invalid old password");
+    }
+
+    user.password = newPassword ;
+    await user.save();         // in model we have added pre hook to hash the password every time there is any change in password
+
+    res.status(200).json(
+        new ApiResponse(200 , null , "Password changed successfully")
+    );
+})
+
+const updateTextualUserDetails = asyncHandler(async (req , res)=>{
+
+    const { username , email } = req.body ;
+
+    if(!username || !email){
+        throw new ApiError(400 , "Username and email are required");
+    }
+
+    const user = User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set : { username : username , email }   // either way is right
+        },
+        {   // to return the updated document
+            new : true
+        }
+    ).select('-password');
+
+    res.status(200).json(
+        new ApiResponse(200 , user , "User details updated successfully")
+    );
+})
+
+const getUser = asyncHandler(async (req , res)=>{
+    const user = await User.findById(req.user._id).select('-password -refreshToken');
+    res.status(200).json(
+        new ApiResponse(200 , user , "User details fetched successfully")
+    );
+})
+
+const updateAvatar = asyncHandler (async (req,res)=>{
+
+    // to get new image url from multer
+    const avatarLocalPath = req.file?.path ;
+    if(!avatarLocalPath){
+        throw new ApiError(400 , "Avatar image is not fetched");
+    }
+
+    // Uploading to cloudinary from temporary multer storage
+    const avatarCloudinaryURL = await uploadToCloudinary(avatarLocalPath);
+    if(!avatarCloudinaryURL){
+        throw new ApiError(500 , "Error in uploading avatar image");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set : { avatar : avatarCloudinaryURL.url }
+        },
+        {   // to return the updated document
+            new : true
+        }
+    )
+
+    res.status(200).json(
+        new ApiResponse(200 , user , "Avatar updated successfully")
+    );
+
+})
+
+const updateCoverIMG = asyncHandler (async (req,res)=>{
+
+    // to get new image url from multer
+    const coverLocalPath = req.file?.path ;
+    if(!coverLocalPath){
+        throw new ApiError(400 , "Cover image is not uploaded");
+    }
+
+    // Uploading to cloudinary from temporary multer storage
+    const coverCloudinaryURL = await uploadToCloudinary(coverLocalPath);
+    if(!coverCloudinaryURL){
+        throw new ApiError(500 , "Error in uploading cover image to cloudinary");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set : { coverImage : coverCloudinaryURL.url }
+        },
+        {   // to return the updated document
+            new : true
+        }
+    )
+
+    res.status(200).json(
+        new ApiResponse(200 , user , "cover image updated successfully")
+    );
+
+})
+
+export {registerUser , loginUser , logoutUser , refreshAccessToken , changePassword , updateTextualUserDetails , getUser , updateAvatar , updateCoverIMG};

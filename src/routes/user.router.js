@@ -10,7 +10,7 @@ router.post('/register' ,
     // middleware after route and before controller 
     upload.fields([
         {
-            name : 'avatar', 
+            name : 'avatar',
             maxCount : 1
         },
         {
@@ -27,3 +27,4 @@ router.route('/logout').post(verifyJWT , logoutUser);
 router.route('/refresh').post(refreshAccessToken);
 
 export default router;
+
