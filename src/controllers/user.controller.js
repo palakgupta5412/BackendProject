@@ -246,8 +246,13 @@ const changePassword = asyncHandler(async (req, res)=>{
     // and this we have done in auth.middleware.js so we just need to use this middleware
     // before this fn
 
-    const user = User.findById(req.user?._id);
+    const user = await User.findById(req.user?._id);
 
+    if(!user){
+        throw new ApiError(404 , "User not found");
+    }
+
+    console.log("user  : " , user);
     // we need to match the oldPasssword in db with the one in req.body
     const isPasswordValid = await user.isPasswordValid(oldPassword);
     if(!isPasswordValid){
@@ -266,19 +271,28 @@ const updateTextualUserDetails = asyncHandler(async (req , res)=>{
 
     const { username , email } = req.body ;
 
-    if(!username || !email){
+    if(!username && !email){
         throw new ApiError(400 , "Username and email are required");
     }
 
-    const user = User.findByIdAndUpdate(
-        req.user._id,
-        {
-            $set : { username : username , email }   // either way is right
-        },
-        {   // to return the updated document
-            new : true
-        }
-    ).select('-password');
+    // const user = await User.findByIdAndUpdate(
+    //     req.user._id,
+    //     {
+    //         $set : { username : username , email }   // either way is right
+    //     },
+    //     {   // to return the updated document
+    //         new : true
+    //     }
+    // ).select('-password');/
+
+    const user = await User.findById(req.user._id);
+    if(!user){
+        throw new ApiError(404 , "User not found");
+    }
+
+    user.username = username ;
+    user.email = email ;
+    await user.save({ validateBeforeSave : false });
 
     res.status(200).json(
         new ApiResponse(200 , user , "User details updated successfully")
@@ -306,7 +320,7 @@ const updateAvatar = asyncHandler (async (req,res)=>{
         throw new ApiError(500 , "Error in uploading avatar image");
     }
 
-    const user = await User.findByIdAndUpdate(
+    let user = await User.findByIdAndUpdate(
         req.user._id,
         {
             $set : { avatar : avatarCloudinaryURL.url }
@@ -352,4 +366,148 @@ const updateCoverIMG = asyncHandler (async (req,res)=>{
 
 })
 
-export {registerUser , loginUser , logoutUser , refreshAccessToken , changePassword , updateTextualUserDetails , getUser , updateAvatar , updateCoverIMG};
+// Using Aggregation Pipeline
+const getUserChannelProfile = asyncHandler(async (req , res)=>{
+    const {username} = req.params ;   //Will get username from url to fetch more details
+    
+    if(!username?.trim()){
+        throw new ApiError(400 , "Username is not fetched ");
+    }
+    
+    const channel = await User.aggregate([
+        //Stage 1 which will give us the user details
+        {
+            $match : {
+                username : username?.toLowerCase()
+            }
+        },
+        //Stage 2 which will give subscribers of this channel user , by joining channels collection with users collection and finding all userss from Subscription schema where channel is this user
+        {
+            $lookup : {
+                from : "subscriptions",   //Since in database schema saved in lowercase and plural
+                localField : "_id" , 
+                foreignField : "channel" , 
+                as : "subscribers"    //array of subscribers of this channel
+            }
+        },
+
+        //Stage 3 to count how many channels I have subscribed to
+        {
+            $lookup : {
+                from : "subscriptions",   //Since in database schema saved in lowercase and plural
+                localField : "_id" , 
+                foreignField : "subscriber" , 
+                as : "subscribedTo"    //array of channel user has subscribed to
+            }
+        },
+
+        // Stage 4 : Adding this subscribers and subscribed to fields to user document
+        {
+            $addFields : {
+                subscribersCount : {
+                    $size : "$subscribers"    //$ since it is a field now 
+                },
+                subscribedToCount : {
+                    $size : "$subscribedTo"   //Stores the size of this array 
+                },
+                //Another field for that button if we follow this channel or not (follow == subscribed)
+                isSubscribed : {
+                    $cond : {
+                        $if : {
+                            $in : [req.user?._id , "$subscribers.subscriber"]   //Checking if req.user._id is present in this array of objects 
+                        }
+                        ,then : true
+                        ,else : false
+                    }
+                }
+            }
+        },
+
+        //Stage 5 : Projecting user this data 
+        {
+            $project : {
+                _id : 1,
+                username : 1,
+                fullName : 1,
+                avatar : 1,
+                coverImage : 1,
+                subscribersCount : 1,
+                subscribedToCount : 1,
+                isSubscribed : 1
+        }}
+
+    ])
+
+    if(!channel?.length){
+        throw new ApiError(404 , "Channel not found");
+    }
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200 , channel[0] , 
+        "Channel details fetched successfully"
+    ));
+
+})
+
+const getWatchHistory = asyncHandler(async(req , res)=>{
+    const  user = await User.aggregate([
+        //Stage 1 : Getting user details using id but since the aggregation pipeline wala code is not handled by mongoose so mongoose is not able convert the object id string to normal reall id internally 
+        {
+            $match : {
+                _id : new mongoose.Types.ObjectId(req.user?._id)
+            }
+        },
+
+        //Stage 2 : Every user has a watchHistory array which has ID's of all videos watched 
+        //Unfolding and joining that 
+        {
+            $lookup : {
+                from : "videos" , 
+                localField : "watchHistory" , 
+                foreignField : "_id" , 
+                as : "watchHistory" , 
+
+                //Nested aggregation pipeline , since we are joining videos collection with users collection but again in video collection we have a user field which is an object id of user collection
+                //Unfolding that
+                pipeline : [
+                    {
+                        $lookup : {
+                            from : "users" , 
+                            localField : "owner" , 
+                            foreignField : "_id" , 
+                            as : "owner" ,
+
+                            //Projecting results so that owner field mein aaye 
+                            pipeline : [
+                            {
+                                $project : {
+                                    fullname : 1 ,
+                                    username : 1,
+                                    avatar : 1
+                                }
+                            },
+
+                            //For providing data at frontend in a better way
+                            {
+                                $addFields : {
+                                    owner : {
+                                        $first : "$owner"
+                                    }
+                                }
+                            }
+                        ]
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    return res.status(200)
+    .json(
+        new ApiResponse(200 , user[0] , "Watch history fetched successfully")
+    );
+})
+
+export {registerUser , loginUser , logoutUser , refreshAccessToken , changePassword , updateTextualUserDetails , getUser , updateAvatar , updateCoverIMG , getUserChannelProfile , getWatchHistory};
