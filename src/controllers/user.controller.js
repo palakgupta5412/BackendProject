@@ -41,8 +41,6 @@ const registerUser = asyncHandler( async (req,res)=>{
         throw new ApiError(400 , "All fields are required");
     }
     
-    
-
     //Approach : for each of the field in the array , we check after trimming them
     //we get empty string or not , if any field is empty we throw error , trimming means 
     //removing extra spaces before and after the string
@@ -61,7 +59,7 @@ const registerUser = asyncHandler( async (req,res)=>{
         var localCoverImageFile = req.files.coverImage[0].path ;
     }
 
-
+    
     //This syntax is for optional chaining , if req.files is undefined it will not throw error 
     //Its like first we check req.files is defined or not , if defined then we access avatar property of it and its 0 index , if avatar[0] is defined then we access its path property 
     //If in the middle any property is undefined it will return undefined instead of throwing error that we are trying to access a property of undefined 
