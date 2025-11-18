@@ -3,6 +3,7 @@ import { ApiError } from '../utils/ApiError.js' ;
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
 import { uploadToCloudinary } from "../utils/cloudinary.js";
+import mongoose from "mongoose";
 
 const generateAccessAndRefreshToken = async(userId) => {
     const currUser = await User.findById(userId); 
@@ -167,7 +168,7 @@ const logoutUser = asyncHandler( async (req,res)=>{
     User.findByIdAndUpdate(
         req.user._id,
         {
-            $set : { refreshToken : undefined }
+            $unset : { refreshToken : 1 }  //remove refresh token field
         },
         {
             new : true
@@ -413,7 +414,7 @@ const getUserChannelProfile = asyncHandler(async (req , res)=>{
                 //Another field for that button if we follow this channel or not (follow == subscribed)
                 isSubscribed : {
                     $cond : {
-                        $if : {
+                        if : {
                             $in : [req.user?._id , "$subscribers.subscriber"]   //Checking if req.user._id is present in this array of objects 
                         }
                         ,then : true
