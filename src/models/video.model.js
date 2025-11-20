@@ -37,7 +37,7 @@ const videoSchema = new mongoose.Schema({
         ref : 'User',                    // Referencing User model
         required : true
     }, 
-
+    
 }, { timestamps: true });
 
 videoSchema.plugin(mongooseAggregatePaginate);

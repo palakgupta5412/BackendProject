@@ -2,6 +2,10 @@ import express from "express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import userRouter from "../src/routes/user.router.js";
+import videoRouter from '../src/routes/video.router.js';
+import likeRouter from '../src/routes/like.router.js';
+import commentRouter from '../src/routes/comment.router.js';
+
 import dotenv from "dotenv";
 dotenv.config();
 //to get all powers of express in app variable
@@ -30,4 +34,8 @@ app.use(cookieParser());
 
 //Routes are imported here and used with app.use
 app.use('/api/v1/users' , userRouter);   //localhost:8000/api/v1/users  , main route for user related routes , userRoute will handle subroutes like /register , /login etc jo bhi uss file mein defined honge 
+app.use('/api/v1/video' , videoRouter) ;
+app.use('/api/v1/likes' , likeRouter) ;
+app.use('/api/v1/comments' , commentRouter) ;
+
 export {app};

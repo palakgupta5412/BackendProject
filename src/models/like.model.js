@@ -14,12 +14,10 @@ const likeSchema = new mongoose.Schema({
     comment : {
         type : mongoose.Schema.Types.ObjectId,
         ref : "Comment",
-        required : true
     },
     tweet : {
         type : mongoose.Schema.Types.ObjectId,
         ref : "Tweet",
-        required : true
     }
 } , {timestamps : true});
 
