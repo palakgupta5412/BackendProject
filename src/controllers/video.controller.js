@@ -140,7 +140,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
       await cloudinary.uploader.destroy(publicId, { resource_type: 'video' });
     }
 
-    console.log("cloudinary video public id : " , publicId);
+    // console.log("cloudinary video public id : " , publicId);
 
     res.status(200)
     .json(
@@ -150,7 +150,22 @@ const deleteVideo = asyncHandler(async (req, res) => {
 })
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
-    const { videoId } = req.params
+    const { videoId } = req.params ;
+
+    const video = await Video.findById(videoId) ;
+
+    if(!video){
+        throw new ApiError(404 , "Video not found");
+    }
+
+    video.isPublished = !video.isPublished ;
+
+    await video.save() ;
+
+    res.status(200)
+    .json(
+        new ApiResponse(200 , video , "Video status updated successfully")
+    )
 })
 
 export {
