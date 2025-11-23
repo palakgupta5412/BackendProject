@@ -1,48 +1,49 @@
 import mongoose, {isValidObjectId} from "mongoose"
 import {Video} from '../models/video.model.js'
 import {Like} from "../models/like.model.js"
+import { Comment } from "../models/comment.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
-    const {videoId} = req.params
+     const { videoId } = req.params
     //TODO: toggle like on video
 
-    // const video = await Video.findById(videoId) ;   //All details of a video that are there in  the model  , ID includes the ranodm id ._id generated and assigned randomly
-
-    // if(!video){
-    //     throw new ApiError(404 , "Video not found");
-    // }
-
-    const like = await Like.findOne({ video: videoId , likedBy : req.user._id}) ;   //All details of a video that are there in  the model  , ID includes the ranodm id ._id generated and assigned randomly
-    let newLike ;
-    if(!like){
-        newLike = await Like.create({
-            video : videoId,
-            likedBy : req.user._id,
-        })
-    }else{
-        await Like.findByIdAndDelete(like._id)
+    if (!isValidObjectId(videoId)) {
+        throw new ApiError(400, "Invalid VideoID")
     }
 
-    res.status(200)
-    .json(
-        new ApiResponse(200 , newLike , "Video liked successfully")
-    )
+    const isLiked = await Like.findOne({ video: videoId, likedBy: req.user._id });
+
+    if (!isLiked) {
+        const like = await Like.create({
+            video: videoId,
+            likedBy: req.user._id
+        });
+
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, like, "Liked the Video")
+            )
+
+    } else {
+        const like = await isLiked.deleteOne();
+        return res
+            .status(200)
+            .json(
+                new ApiResponse(200, like, "Unliked the Video")
+            )
+    }
 })
 
 const toggleCommentLike = asyncHandler(async (req, res) => {
     const {commentId} = req.params
     //TODO: toggle like on comment
 
-    const comment = await Comment.findById(commentId) ;   //All details of a video that are there in  the model  , ID includes the ranodm id ._id generated and assigned randomly
-
-    if(!comment){
-        throw new ApiError(404 , "Comment not found");
-    }
-
     const like = await Like.findOne({ comment: commentId , likedBy : req.user._id});
+    
     if(!like){
         const newLike = await Like.create({
             comment : commentId,
