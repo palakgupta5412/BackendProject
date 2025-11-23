@@ -6,14 +6,13 @@ import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import {uploadToCloudinary} from "../utils/cloudinary.js"
 
-
 const getAllVideos = asyncHandler(async (req, res) => {
     const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
     //TODO: get all videos based on query, sort, pagination
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {
-    const { title, description} = req.body
+    const { title, description} = req.body ;
     // TODO: get video, upload to cloudinary, create video
     const { thumbnail , video } = req.files ;
 
@@ -40,7 +39,8 @@ const publishAVideo = asyncHandler(async (req, res) => {
         duration : videoUrl.duration,
         views : 0,
         likes : 0,
-        owner : req.user._id       //jav verifyJWT hua hoga tab it added the user field to request and we are accessing it now
+        owner : req.user._id,       //jav verifyJWT hua hoga tab it added the user field to request and we are accessing it now
+        publicId : videoUrl.public_id
     })
 
     if(!newVideo){
@@ -49,7 +49,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
     
     res.status(200)
     .json(
-        new ApiResponse(200 , videoUrl , "Video uploaded successfully")
+        new ApiResponse(200 , newVideo , "Video uploaded successfully")
     )
 })
 
@@ -111,17 +111,18 @@ const updateVideo = asyncHandler(async (req, res) => {
 
 })
 
-function getPublicIdFromUrl(url) {
-  // Remove domain prefix
-  const parts = url.split('/');
-  // Expected URL parts example:
-  // ['http:', '', 'res.cloudinary.com', 'dc8ryewn6', 'video', 'upload', 'v1763490099', 'vn143oothopwdamf9fho.mkv']
-  // public ID is the part right after the version, without extension
-  const versionIndex = parts.findIndex(part => part.startsWith('v'));
-  const filename = parts[versionIndex + 1]; // e.g. "vn143oothopwdamf9fho.mkv"
-  const publicId = filename.substring(0, filename.lastIndexOf('.')); // remove extension
-  return publicId;
-}
+const getPublicIdFromUrl = asyncHandler( async (req,res)=>{
+
+    const videoId = req.params.videoId;
+    const video = await Video.findById(videoId) ;
+    if(!video){
+        throw new ApiError(404 , "Video not found");
+    }
+    res.status(200)
+    .json({
+        public_id : video.publicId
+    })
+})
 
 const deleteVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
@@ -150,7 +151,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 })
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
-    const { videoId } = req.params ;
+    const {videoId}  = req.params ;
 
     const video = await Video.findById(videoId) ;
 
@@ -159,8 +160,9 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
     }
 
     video.isPublished = !video.isPublished ;
-
     await video.save() ;
+
+    console.log("video : " , video.isPublished);
 
     res.status(200)
     .json(
@@ -174,5 +176,6 @@ export {
     getVideoById,
     updateVideo,
     deleteVideo,
-    togglePublishStatus
+    togglePublishStatus,
+    getPublicIdFromUrl
 }

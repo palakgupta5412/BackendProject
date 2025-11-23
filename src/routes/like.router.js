@@ -9,4 +9,4 @@ router.route('/likeComment/:commentId').post(verifyJWT , toggleCommentLike);
 router.route('/likeTweet/:tweetId').post(verifyJWT , toggleTweetLike);
 router.route('/getLikedVideos').get(verifyJWT , getLikedVideos);
 
-export default router ;
+export default router ; 

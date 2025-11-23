@@ -4,25 +4,26 @@ import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
 import { Video } from "../models/video.model.js"
+
 const getVideoComments = asyncHandler(async (req, res) => {
     //TODO: get all comments for a video
     const {videoId} = req.params
     const {page = 1, limit = 10} = req.query
-
-    
-
 })
 
 const addComment = asyncHandler(async (req, res) => {
     // TODO: add a comment to a video
-    const comment = req.body ;
-    const videoId = req.params.videoId ;
+    const { content } = req.body;        // destructure the text
 
-    const owner = req.user._id ;
+    if (!content || !content.trim()) {
+        throw new ApiError(400, "Content is required");
+    }
+    const videoId = req.params.videoId ;
+    
     const newComment = await Comment.create({
-        ...comment,
+        content ,
         video : videoId,
-        owner
+        owner : req.user._id
     })
     res.status(201)
     .json(

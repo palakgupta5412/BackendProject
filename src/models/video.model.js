@@ -9,16 +9,13 @@ const videoSchema = new mongoose.Schema({
     },
     thumbnail : {
         type : String,                    // URL of the thumbnail image stored in cloudinary or any other service
-        required : true,
         message : "URL of the thumbnail image"
     },
     title : {
         type : String,
-        required : true
     },
     description : {
         type : String,
-        required : true
     },
     duration : {
         type : Number,                    // Duration in seconds obrtained from cloudinary or any other service
@@ -37,6 +34,10 @@ const videoSchema = new mongoose.Schema({
         ref : 'User',                    // Referencing User model
         required : true
     }, 
+    publicId : {
+        type : String,
+        required : true
+    }
     
 }, { timestamps: true });
 

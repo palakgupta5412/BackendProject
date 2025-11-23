@@ -1,23 +1,24 @@
 import mongoose, {isValidObjectId} from "mongoose"
+import {Video} from '../models/video.model.js'
 import {Like} from "../models/like.model.js"
 import {ApiError} from "../utils/ApiError.js"
 import {ApiResponse} from "../utils/ApiResponse.js"
 import {asyncHandler} from "../utils/asyncHandler.js"
-import { User } from "../models/user.model.js"
 
 const toggleVideoLike = asyncHandler(async (req, res) => {
     const {videoId} = req.params
     //TODO: toggle like on video
 
-    const video = await Video.findById(videoId) ;   //All details of a video that are there in  the model  , ID includes the ranodm id ._id generated and assigned randomly
+    // const video = await Video.findById(videoId) ;   //All details of a video that are there in  the model  , ID includes the ranodm id ._id generated and assigned randomly
 
-    if(!video){
-        throw new ApiError(404 , "Video not found");
-    }
+    // if(!video){
+    //     throw new ApiError(404 , "Video not found");
+    // }
 
     const like = await Like.findOne({ video: videoId , likedBy : req.user._id}) ;   //All details of a video that are there in  the model  , ID includes the ranodm id ._id generated and assigned randomly
+    let newLike ;
     if(!like){
-        const newLike = await Like.create({
+        newLike = await Like.create({
             video : videoId,
             likedBy : req.user._id,
         })
@@ -27,7 +28,7 @@ const toggleVideoLike = asyncHandler(async (req, res) => {
 
     res.status(200)
     .json(
-        new ApiResponse(200 , like , "Video liked successfully")
+        new ApiResponse(200 , newLike , "Video liked successfully")
     )
 })
 
